@@ -192,7 +192,8 @@
     build))
 
 (defn require-connection-script-js [build]
-  (let [node? (= :nodejs (get-in build [:build-options :target]))
+  (let [node? (when-let [target (get-in build [:build-options :target])]
+                (= target :nodejs))
         main? (get-in build [:build-options :main])
         output-to (get-in build [:build-options :output-to])
         line (if (and main? (not node?))
@@ -202,7 +203,7 @@
                 "\ndocument.write(\"<script>if (typeof goog != \\\"undefined\\\") { goog.require(\\\"figwheel.connect\\\"); }</script>\");")
                "\ngoog.require(\"figwheel.connect\");")]
     (when output-to
-      (if main?
+      (if (and main? (not node?))
         (let [lines (string/split (slurp output-to) #"\n")]
           ;; require before app
           (spit output-to (string/join "\n" (concat (butlast lines) [line] [(last lines)]))))
